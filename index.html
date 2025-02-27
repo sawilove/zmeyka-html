@@ -17,8 +17,8 @@
             color: white;
             font-family: 'Pixelify Sans', sans-serif;
         }
-        #score {
-            margin-bottom: 10px;
+        #score, #bestScore {
+            margin-bottom: 5px;
             font-size: 20px;
         }
         canvas {
@@ -52,7 +52,7 @@
                 gap: 10px;
                 justify-content: center;
             }
-            #score {
+            #score, #bestScore {
                 font-size: 18px;
             }
             canvas {
@@ -68,6 +68,7 @@
 </head>
 <body>
     <div id="score">Счет: 0</div>
+    <div id="bestScore">Рекорд: 0</div>
     <canvas id="gameCanvas"></canvas>
     <div id="controls">
         <button id="up">↑</button>
