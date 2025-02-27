@@ -4,15 +4,15 @@ const gridSize = 20;
 let tileCount = Math.floor(canvas.width / gridSize);
 
 let snake = [{x: 10, y: 10}];
-let direction = {x: 0, y: 0};
+let direction = {x: 0, y: 0}; // Начальное направление
 let apple = {x: 15, y: 15};
 let score = 0;
 let gameOver = false;
 let oldSnake = [];
 let lastTickTime = 0;
-const tickInterval = 100; // Оставляем 100 мс для комфортной скорости, без адаптации для мобильных
-const targetFPS = 30; // Устанавливаем целевую частоту интерполяции на 30 FPS
-const frameInterval = 1000 / targetFPS; // Интервал между кадрами для 30 FPS (~33.3 мс)
+const tickInterval = 50; // Сохраняем 50 мс для быстрой реакции
+const targetFPS = 10; // Уменьшаем целевой FPS до 10 для минимальной нагрузки
+const frameInterval = 1000 / targetFPS; // Интервал между кадрами для 10 FPS (100 мс)
 
 // Загружаем лучший рекорд из localStorage или устанавливаем 0
 let bestScore = parseInt(localStorage.getItem('bestScore')) || 0;
@@ -35,7 +35,7 @@ function draw(timestamp) {
 
 function drawSnake(timestamp) {
     let delta = timestamp - lastTickTime;
-    let factor = Math.min(delta / tickInterval, 1); // Убрано адаптивное увеличение для мобильных
+    let factor = Math.min(delta / tickInterval, 1); // Упрощаем интерполяцию
     ctx.fillStyle = 'green';
     for (let i = 0; i < snake.length; i++) {
         let oldPos = i < oldSnake.length ? oldSnake[i] : snake[i];
@@ -79,8 +79,9 @@ function generateApple() {
 function checkCollision() {
     const head = snake[0];
     
-    // Унифицированная проверка столкновений для всех устройств, только по голове
-    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+    // Уточнённая проверка столкновений для всех устройств
+    // Добавляем небольшой буфер для правой и нижней границ (-0.1)
+    if (head.x < 0 || head.x >= tileCount - 0.1 || head.y < 0 || head.y >= tileCount - 0.1) {
         gameOver = true;
     }
     
@@ -120,7 +121,7 @@ function gameLoop(timestamp) {
         return;
     }
     
-    // Ограничиваем отрисовку до 30 FPS
+    // Ограничиваем отрисовку до 10 FPS
     if (timestamp - lastTickTime >= frameInterval) {
         if (timestamp - lastTickTime >= tickInterval) {
             oldSnake = snake.map(segment => ({x: segment.x, y: segment.y}));
@@ -146,6 +147,7 @@ function restartGame() {
     requestAnimationFrame(gameLoop);
 }
 
+// Мгновенная обработка ввода
 document.addEventListener('keydown', (e) => {
     if (gameOver) {
         restartGame();
@@ -167,21 +169,27 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-document.getElementById('up').addEventListener('click', () => {
+// Мгновенная обработка нажатий на кнопки для мобильных (touchstart)
+document.getElementById('up').addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Предотвращаем стандартное поведение
     if (direction.y === 0) direction = {x: 0, y: -1};
 });
-document.getElementById('down').addEventListener('click', () => {
+document.getElementById('down').addEventListener('touchstart', (e) => {
+    e.preventDefault();
     if (direction.y === 0) direction = {x: 0, y: 1};
 });
-document.getElementById('left').addEventListener('click', () => {
+document.getElementById('left').addEventListener('touchstart', (e) => {
+    e.preventDefault();
     if (direction.x === 0) direction = {x: -1, y: 0};
 });
-document.getElementById('right').addEventListener('click', () => {
+document.getElementById('right').addEventListener('touchstart', (e) => {
+    e.preventDefault();
     if (direction.x === 0) direction = {x: 1, y: 0};
 });
 
-canvas.addEventListener('touchstart', () => {
+canvas.addEventListener('touchstart', (e) => {
     if (gameOver) restartGame();
+    e.preventDefault(); // Предотвращаем любые нежелательные действия
 });
 
 generateApple();
