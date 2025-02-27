@@ -30,7 +30,7 @@
             max-height: 400px;
         }
         #controls {
-            display: none; /* Скрыто на ПК */
+            display: none; /* Скрыто по умолчанию (на ПК) */
             margin-top: 20px;
         }
         #controls button {
@@ -44,7 +44,7 @@
         }
         @media (max-width: 600px) {
             #controls {
-                display: grid; /* Показано на мобильных */
+                display: grid; /* Показываем на мобильных устройствах */
                 grid-template-areas:
                     ' . up . '
                     'left . right'
