@@ -8,7 +8,9 @@ let direction = {x: 0, y: 0};
 let apple = {x: 15, y: 15};
 let score = 0;
 let gameOver = false;
-let gameInterval;
+let lastTime = 0;
+let speed = 150; // Скорость в миллисекундах (меньше = быстрее)
+let snakePos = {x: snake[0].x, y: snake[0].y}; // Текущая "плавная" позиция
 
 function resizeCanvas() {
     const size = Math.min(window.innerWidth * 0.9, 400);
@@ -20,20 +22,18 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 function draw() {
-    if (gameOver) {
-        showGameOver();
-    } else {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawSnake();
-        drawApple();
-    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawSnake();
+    drawApple();
 }
 
 function drawSnake() {
     ctx.fillStyle = 'green';
-    snake.forEach(segment => {
-        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
-    });
+    // Рисуем змейку с интерполированной позицией для головы
+    ctx.fillRect(snakePos.x * gridSize, snakePos.y * gridSize, gridSize, gridSize);
+    for (let i = 1; i < snake.length; i++) {
+        ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize, gridSize);
+    }
 }
 
 function drawApple() {
@@ -51,6 +51,7 @@ function moveSnake() {
     } else {
         snake.pop();
     }
+    snakePos = {x: head.x, y: head.y}; // Обновляем целевую позицию
 }
 
 function generateApple() {
@@ -62,12 +63,10 @@ function checkCollision() {
     const head = snake[0];
     if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
         gameOver = true;
-        clearInterval(gameInterval);
     }
     for (let i = 1; i < snake.length; i++) {
         if (snake[i].x === head.x && snake[i].y === head.y) {
             gameOver = true;
-            clearInterval(gameInterval);
         }
     }
 }
@@ -82,27 +81,34 @@ function showGameOver() {
     ctx.fillText('чтобы начать заново', canvas.width / 2, canvas.height / 2 + 40);
 }
 
-function getGameSpeed() {
-    return window.innerWidth > 600 ? 100 : 150;
+function gameLoop(timestamp) {
+    if (gameOver) {
+        showGameOver();
+        return;
+    }
+
+    // Обновляем логику движения с заданной скоростью
+    if (timestamp - lastTime >= speed) {
+        moveSnake();
+        checkCollision();
+        lastTime = timestamp;
+    }
+
+    // Интерполяция (пока упрощённая, но можно улучшить)
+    draw();
+    requestAnimationFrame(gameLoop);
 }
 
 function restartGame() {
     snake = [{x: 10, y: 10}];
     direction = {x: 0, y: 0};
+    snakePos = {x: 10, y: 10};
     score = 0;
     document.getElementById('score').innerText = 'Счет: ' + score;
     generateApple();
     gameOver = false;
-    clearInterval(gameInterval);
-    gameInterval = setInterval(gameLoop, getGameSpeed());
-}
-
-function gameLoop() {
-    if (!gameOver) {
-        moveSnake();
-        checkCollision();
-        draw();
-    }
+    lastTime = 0;
+    requestAnimationFrame(gameLoop);
 }
 
 document.addEventListener('keydown', (e) => {
@@ -140,10 +146,8 @@ document.getElementById('right').addEventListener('click', () => {
 });
 
 canvas.addEventListener('touchstart', () => {
-    if (gameOver) {
-        restartGame();
-    }
+    if (gameOver) restartGame();
 });
 
 generateApple();
-gameInterval = setInterval(gameLoop, getGameSpeed());
+requestAnimationFrame(gameLoop);
