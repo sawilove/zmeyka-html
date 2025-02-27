@@ -8,12 +8,12 @@ let direction = {x: 0, y: 0};
 let apple = {x: 15, y: 15};
 let score = 0;
 let gameOver = false;
-let lastTime = 0;
-let speed = 150; // Скорость в миллисекундах (меньше = быстрее)
-let snakePos = {x: snake[0].x, y: snake[0].y}; // Текущая "плавная" позиция
+let oldSnake = [];
+let lastTickTime = 0;
+let tickInterval = 100; // Интервал обновления логики (мс)
 
 function resizeCanvas() {
-    const size = Math.min(window.innerWidth * 0.9, 400);
+    const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9, 400);
     canvas.width = size;
     canvas.height = size;
     tileCount = Math.floor(size / gridSize);
@@ -21,18 +21,22 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-function draw() {
+function draw(timestamp) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawSnake();
+    drawSnake(timestamp);
     drawApple();
 }
 
-function drawSnake() {
+function drawSnake(timestamp) {
+    let delta = timestamp - lastTickTime;
+    let factor = Math.min(delta / tickInterval, 1); // Фактор интерполяции
     ctx.fillStyle = 'green';
-    // Рисуем змейку с интерполированной позицией для головы
-    ctx.fillRect(snakePos.x * gridSize, snakePos.y * gridSize, gridSize, gridSize);
-    for (let i = 1; i < snake.length; i++) {
-        ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize, gridSize);
+    for (let i = 0; i < snake.length; i++) {
+        let oldPos = i < oldSnake.length ? oldSnake[i] : snake[i];
+        let newPos = snake[i];
+        let renderX = oldPos.x + (newPos.x - oldPos.x) * factor;
+        let renderY = oldPos.y + (newPos.y - oldPos.y) * factor;
+        ctx.fillRect(renderX * gridSize, renderY * gridSize, gridSize, gridSize);
     }
 }
 
@@ -51,7 +55,6 @@ function moveSnake() {
     } else {
         snake.pop();
     }
-    snakePos = {x: head.x, y: head.y}; // Обновляем целевую позицию
 }
 
 function generateApple() {
@@ -86,28 +89,25 @@ function gameLoop(timestamp) {
         showGameOver();
         return;
     }
-
-    // Обновляем логику движения с заданной скоростью
-    if (timestamp - lastTime >= speed) {
+    if (timestamp - lastTickTime >= tickInterval) {
+        oldSnake = snake.map(segment => ({x: segment.x, y: segment.y}));
         moveSnake();
         checkCollision();
-        lastTime = timestamp;
+        lastTickTime = timestamp;
     }
-
-    // Интерполяция (пока упрощённая, но можно улучшить)
-    draw();
+    draw(timestamp);
     requestAnimationFrame(gameLoop);
 }
 
 function restartGame() {
     snake = [{x: 10, y: 10}];
     direction = {x: 0, y: 0};
-    snakePos = {x: 10, y: 10};
     score = 0;
     document.getElementById('score').innerText = 'Счет: ' + score;
     generateApple();
     gameOver = false;
-    lastTime = 0;
+    oldSnake = [];
+    lastTickTime = 0;
     requestAnimationFrame(gameLoop);
 }
 
