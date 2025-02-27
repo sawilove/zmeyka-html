@@ -44,7 +44,7 @@
         }
         @media (max-width: 600px) {
             #controls {
-                display: grid; /* Показываем на мобильных устройствах */
+                display: grid; /* Отображается на мобильных устройствах */
                 grid-template-areas:
                     ' . up . '
                     'left . right'
@@ -60,6 +60,10 @@
                 height: 95vw;
             }
         }
+        #up { grid-area: up; }
+        #left { grid-area: left; }
+        #right { grid-area: right; }
+        #down { grid-area: down; }
     </style>
 </head>
 <body>
