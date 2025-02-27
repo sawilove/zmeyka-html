@@ -10,7 +10,7 @@ let score = 0;
 let gameOver = false;
 let oldSnake = [];
 let lastTickTime = 0;
-const tickInterval = 100; // Оставляем 100 мс для комфортной скорости
+const tickInterval = 100; // Оставляем 100 мс для комфортной скорости, без адаптации для мобильных
 const targetFPS = 30; // Устанавливаем целевую частоту интерполяции на 30 FPS
 const frameInterval = 1000 / targetFPS; // Интервал между кадрами для 30 FPS (~33.3 мс)
 
@@ -35,7 +35,7 @@ function draw(timestamp) {
 
 function drawSnake(timestamp) {
     let delta = timestamp - lastTickTime;
-    let factor = Math.min(delta / (tickInterval * (window.innerWidth > 600 ? 1 : 1.5)), 1); // Адаптация для мобильных
+    let factor = Math.min(delta / tickInterval, 1); // Убрано адаптивное увеличение для мобильных
     ctx.fillStyle = 'green';
     for (let i = 0; i < snake.length; i++) {
         let oldPos = i < oldSnake.length ? oldSnake[i] : snake[i];
@@ -79,19 +79,12 @@ function generateApple() {
 function checkCollision() {
     const head = snake[0];
     
-    // Адаптируем проверку столкновений для мобильных устройств
-    if (window.innerWidth <= 600) {
-        // Змейка умирает только на самом краю с увеличенным буфером
-        if (head.x < -1 || head.x > tileCount + 1 || head.y < -1 || head.y > tileCount + 1) {
-            gameOver = true;
-        }
-    } else {
-        // Для ПК стандартная проверка
-        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-            gameOver = true;
-        }
+    // Унифицированная проверка столкновений для всех устройств, только по голове
+    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+        gameOver = true;
     }
     
+    // Проверка столкновения с телом змейки (только по голове)
     for (let i = 1; i < snake.length; i++) {
         if (snake[i].x === head.x && snake[i].y === head.y) {
             gameOver = true;
