@@ -10,7 +10,9 @@ let score = 0;
 let gameOver = false;
 let oldSnake = [];
 let lastTickTime = 0;
-let tickInterval = 100; // Интервал обновления логики (мс)
+const tickInterval = 100; // Оставляем 100 мс для комфортной скорости, но регулируем интерполяцию
+const targetFPS = 30; // Устанавливаем целевую частоту интерполяции на 30 FPS
+const frameInterval = 1000 / targetFPS; // Интервал между кадрами для 30 FPS (~33.3 мс)
 
 function resizeCanvas() {
     const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9, 400);
@@ -29,20 +31,28 @@ function draw(timestamp) {
 
 function drawSnake(timestamp) {
     let delta = timestamp - lastTickTime;
-    let factor = Math.min(delta / tickInterval, 1); // Фактор интерполяции
+    let factor = Math.min(delta / (tickInterval * (window.innerWidth > 600 ? 1 : 1.5)), 1); // Адаптация для мобильных
     ctx.fillStyle = 'green';
     for (let i = 0; i < snake.length; i++) {
         let oldPos = i < oldSnake.length ? oldSnake[i] : snake[i];
         let newPos = snake[i];
         let renderX = oldPos.x + (newPos.x - oldPos.x) * factor;
         let renderY = oldPos.y + (newPos.y - oldPos.y) * factor;
-        ctx.fillRect(renderX * gridSize, renderY * gridSize, gridSize, gridSize);
+        
+        // Визуальное разделение сегментов с зазором (оставляем 2 пикселя между сегментами)
+        const segmentSize = gridSize - 2; // Уменьшаем размер сегмента для зазора
+        ctx.fillRect(
+            renderX * gridSize + 1, // Сдвиг для зазора
+            renderY * gridSize + 1,
+            segmentSize,
+            segmentSize
+        );
     }
 }
 
 function drawApple() {
     ctx.fillStyle = 'red';
-    ctx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize, gridSize);
+    ctx.fillRect(apple.x * gridSize + 2, apple.y * gridSize + 2, gridSize - 4, gridSize - 4); // С небольшим зазором
 }
 
 function moveSnake() {
@@ -64,9 +74,20 @@ function generateApple() {
 
 function checkCollision() {
     const head = snake[0];
-    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-        gameOver = true;
+    
+    // Адаптируем проверку столкновений для мобильных устройств
+    if (window.innerWidth <= 600) {
+        // Змейка умирает только на самом краю (с учётом интерполяции)
+        if (head.x < -0.5 || head.x > tileCount - 0.5 || head.y < -0.5 || head.y > tileCount - 0.5) {
+            gameOver = true;
+        }
+    } else {
+        // Для ПК стандартная проверка
+        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+            gameOver = true;
+        }
     }
+    
     for (let i = 1; i < snake.length; i++) {
         if (snake[i].x === head.x && snake[i].y === head.y) {
             gameOver = true;
@@ -89,13 +110,18 @@ function gameLoop(timestamp) {
         showGameOver();
         return;
     }
-    if (timestamp - lastTickTime >= tickInterval) {
-        oldSnake = snake.map(segment => ({x: segment.x, y: segment.y}));
-        moveSnake();
-        checkCollision();
-        lastTickTime = timestamp;
+    
+    // Ограничиваем отрисовку до 30 FPS
+    if (timestamp - lastTickTime >= frameInterval) {
+        if (timestamp - lastTickTime >= tickInterval) {
+            oldSnake = snake.map(segment => ({x: segment.x, y: segment.y}));
+            moveSnake();
+            checkCollision();
+            lastTickTime = timestamp;
+        }
+        draw(timestamp);
     }
-    draw(timestamp);
+    
     requestAnimationFrame(gameLoop);
 }
 
