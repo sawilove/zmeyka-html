@@ -82,6 +82,10 @@ function showGameOver() {
     ctx.fillText('чтобы начать заново', canvas.width / 2, canvas.height / 2 + 40);
 }
 
+function getGameSpeed() {
+    return window.innerWidth > 600 ? 100 : 150;
+}
+
 function restartGame() {
     snake = [{x: 10, y: 10}];
     direction = {x: 0, y: 0};
@@ -89,7 +93,8 @@ function restartGame() {
     document.getElementById('score').innerText = 'Счет: ' + score;
     generateApple();
     gameOver = false;
-    gameInterval = setInterval(gameLoop, 150);
+    clearInterval(gameInterval);
+    gameInterval = setInterval(gameLoop, getGameSpeed());
 }
 
 function gameLoop() {
@@ -141,4 +146,4 @@ canvas.addEventListener('touchstart', () => {
 });
 
 generateApple();
-gameInterval = setInterval(gameLoop, 150);
+gameInterval = setInterval(gameLoop, getGameSpeed());
