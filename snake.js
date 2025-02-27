@@ -10,9 +10,13 @@ let score = 0;
 let gameOver = false;
 let oldSnake = [];
 let lastTickTime = 0;
-const tickInterval = 100; // Оставляем 100 мс для комфортной скорости, но регулируем интерполяцию
+const tickInterval = 100; // Оставляем 100 мс для комфортной скорости
 const targetFPS = 30; // Устанавливаем целевую частоту интерполяции на 30 FPS
 const frameInterval = 1000 / targetFPS; // Интервал между кадрами для 30 FPS (~33.3 мс)
+
+// Загружаем лучший рекорд из localStorage или устанавливаем 0
+let bestScore = parseInt(localStorage.getItem('bestScore')) || 0;
+document.getElementById('bestScore').innerText = `Рекорд: ${bestScore}`;
 
 function resizeCanvas() {
     const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9, 400);
@@ -77,8 +81,8 @@ function checkCollision() {
     
     // Адаптируем проверку столкновений для мобильных устройств
     if (window.innerWidth <= 600) {
-        // Змейка умирает только на самом краю (с учётом интерполяции)
-        if (head.x < -0.5 || head.x > tileCount - 0.5 || head.y < -0.5 || head.y > tileCount - 0.5) {
+        // Змейка умирает только на самом краю с увеличенным буфером
+        if (head.x < -1 || head.x > tileCount + 1 || head.y < -1 || head.y > tileCount + 1) {
             gameOver = true;
         }
     } else {
@@ -100,9 +104,21 @@ function showGameOver() {
     ctx.font = '20px "Pixelify Sans"';
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
+    
     ctx.fillText('Игра окончена!', canvas.width / 2, canvas.height / 2 - 20);
-    ctx.fillText('Нажмите любую клавишу', canvas.width / 2, canvas.height / 2 + 10);
-    ctx.fillText('чтобы начать заново', canvas.width / 2, canvas.height / 2 + 40);
+    
+    // Проверяем, побит ли рекорд
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('bestScore', bestScore); // Сохраняем новый рекорд
+        document.getElementById('bestScore').innerText = `Рекорд: ${bestScore}`;
+        
+        ctx.fillStyle = 'yellow'; // Жёлтый цвет для нового рекорда
+        ctx.fillText(`Новый рекорд: ${score}!`, canvas.width / 2, canvas.height / 2 + 20);
+    }
+    
+    ctx.fillText('Нажмите любую клавишу', canvas.width / 2, canvas.height / 2 + 50);
+    ctx.fillText('чтобы начать заново', canvas.width / 2, canvas.height / 2 + 80);
 }
 
 function gameLoop(timestamp) {
