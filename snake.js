@@ -21,11 +21,16 @@ function resizeCanvas() {
     canvas.width = size;
     canvas.height = size;
     tileCount = Math.floor(size / gridSize);
-    // Корректируем позиции змейки и яблока при изменении размера
-    snake.forEach(segment => {
-        segment.x = Math.min(Math.max(segment.x, 0), tileCount - 1);
-        segment.y = Math.min(Math.max(segment.y, 0), tileCount - 1);
-    });
+    // Проверяем, чтобы змейка оставалась в пределах поля после изменения размера
+    if (snake.length > 0) {
+        snake.forEach(segment => {
+            segment.x = Math.min(Math.max(segment.x, 0), tileCount - 1);
+            segment.y = Math.min(Math.max(segment.y, 0), tileCount - 1);
+        });
+    } else {
+        // Если змейка пуста, инициализируем её заново
+        snake = [{x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)}];
+    }
     apple.x = Math.min(Math.max(apple.x, 0), tileCount - 1);
     apple.y = Math.min(Math.max(apple.y, 0), tileCount - 1);
 }
@@ -60,7 +65,7 @@ function drawApple() {
 function moveSnake() {
     const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
     snake.unshift(head);
-    if (Math.floor(head.x) === apple.x && Math.floor(head.y) === apple.y) {
+    if (Math.abs(head.x - apple.x) < 0.1 && Math.abs(head.y - apple.y) < 0.1) {
         score++;
         document.getElementById('score').innerText = 'Счет: ' + score;
         generateApple();
@@ -76,11 +81,9 @@ function generateApple() {
 
 function checkCollision() {
     const head = snake[0];
-    // Добавляем буфер для проверки границ
     if (head.x < -0.1 || head.x >= tileCount - 0.9 || head.y < -0.1 || head.y >= tileCount - 0.9) {
         gameOver = true;
     }
-    // Проверка столкновения с телом с небольшой погрешностью
     for (let i = 1; i < snake.length; i++) {
         if (Math.abs(snake[i].x - head.x) < 0.1 && Math.abs(snake[i].y - head.y) < 0.1) {
             gameOver = true;
@@ -106,6 +109,7 @@ function showGameOver() {
 }
 
 function gameLoop(timestamp) {
+    if (!timestamp) timestamp = 0; // Инициализация первого кадра
     if (gameOver) {
         showGameOver();
         return;
@@ -123,7 +127,7 @@ function gameLoop(timestamp) {
 }
 
 function restartGame() {
-    snake = [{x: 10, y: 10}];
+    snake = [{x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)}];
     direction = {x: 0, y: 0};
     score = 0;
     document.getElementById('score').innerText = 'Счет: ' + score;
@@ -140,4 +144,43 @@ document.addEventListener('keydown', (e) => {
     } else {
         switch (e.key) {
             case 'ArrowUp':
-                if (direction.y === 0) direction = {x: 0, y
+                if (direction.y === 0) direction = {x: 0, y: -1};
+                break;
+            case 'ArrowDown':
+                if (direction.y === 0) direction = {x: 0, y: 1};
+                break;
+            case 'ArrowLeft':
+                if (direction.x === 0) direction = {x: -1, y: 0};
+                break;
+            case 'ArrowRight':
+                if (direction.x === 0) direction = {x: 1, y: 0};
+                break;
+        }
+    }
+});
+
+document.getElementById('up').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (direction.y === 0) direction = {x: 0, y: -1};
+});
+document.getElementById('down').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (direction.y === 0) direction = {x: 0, y: 1};
+});
+document.getElementById('left').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (direction.x === 0) direction = {x: -1, y: 0};
+});
+document.getElementById('right').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (direction.x === 0) direction = {x: 1, y: 0};
+});
+
+canvas.addEventListener('touchstart', (e) => {
+    if (gameOver) restartGame();
+    e.preventDefault();
+});
+
+// Инициализация игры
+generateApple();
+requestAnimationFrame(gameLoop);
